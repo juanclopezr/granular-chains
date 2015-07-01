@@ -26,7 +26,7 @@ def step_size(M, qp, n):
     return DP
 
 
-# In[30]:
+# In[78]:
 
 #LZB Multiple impact models
 def integration(qp, M, W, E, K, n, es, Dp):
@@ -44,14 +44,17 @@ def integration(qp, M, W, E, K, n, es, Dp):
     qq = [qp]
     #energy matrix
     EE = [E]
-    #change in q
+    #reltive speed
     dp = np.zeros(qp.shape[0]-1)
+    #relative speed matrux
     ff = [dp]
     #normal impulse
     P = np.zeros(qp.shape[0]-1)
+    #normal impulse matrix
     PP = [P]
     #contact force
     lamb = np.zeros(qp.shape[0]-1)
+    #contact force matrix
     lambb = [lamb]
     
     #initial values
@@ -76,27 +79,32 @@ def integration(qp, M, W, E, K, n, es, Dp):
     
     #Compute the distributing vector Ta
     Ta = np.zeros(qp.shape[0])
-    ni = np.zeros(qp.shape[0] -1)
-    Ki = np.zeros(qp.shape[0] -1)
+    ni = np.zeros(qp.shape[0] - 1)
+    Ki = np.zeros(qp.shape[0] - 1)
     dpi = np.zeros(qp.shape[0] - 1)
     dP = np.zeros(qp.shape[0] - 1)
     Ai = np.zeros(qp.shape[0] - 1)
     Ei = np.zeros(qp.shape[0] - 1)
     
+    #Contacts
+    flag = np.zeros(qp.shape[0] - 1)
+    #flag[j] = 0: contact does not come into collition
+    #flag[j] = 1 contact begins the compression phase
+    #flag[j] = 2 contact is already in the impact process
+    
+    #for speed purposes
+    
+    rang = range(qp.shape[0] - 1)
     while (not Termination) | k < 40000:
-        #Contacts
-        flag = np.zeros(qp.shape[0] - 1)
-        #flag[j] = 0: contact does not come into collition
-        #flag[j] = 1 contact begins the compression phase
-        #flag[j] = 2 contact is already in the impact process
         
         Termination = True
-        for j in xrange(qp.shape[0] - 1 ):
+        for j in rang:
             if E[j] <= 1e-36:
                 if dp[j] <= 0:
                     flag[j] = 0
                 else:
                     flag[j] = 1
+                    Termination = False
             else:
                 flag[j] = 2
                 Termination = False
@@ -110,16 +118,16 @@ def integration(qp, M, W, E, K, n, es, Dp):
         maxE = max(E)
         if maxE == 0:
             PrimaryContactInVel = True
-            for j in xrange(qp.shape[0]-1):
-                if d[i] < d[j]:
+            for j in rang:
+                if dp[i] < dp[j]:
                     i = j
         else:
             PrimaryContactInVel = False
-            for j in xrange(qp.shape[0]-1):
+            for j in rang:
                 if E[i] < E[j]:
                     i = j
         
-        for j in xrange(qp.shape[0] - 1):
+        for j in rang:
             ni[j] = ((1 + n[j]) ** (n[j] / (n[j] + 1))) / ((1 + n[i]) ** (n[i] / (n[i] + 1)))
             Ki[j] = (K[j] ** (1 / (1 + n[j]))) / (K[i] ** (1 / (1 + n[i])))
             
@@ -139,7 +147,7 @@ def integration(qp, M, W, E, K, n, es, Dp):
                     dP[j] = Dp*Ta[j]
         
         qp += Dp * np.dot(np.dot(np.linalg.inv(M), W), Ta)
-        for j in xrange(qp.shape[0] - 1):
+        for j in rang:
             tmp = dp[j]
             dp[j] = qp[j] - qp[j+1]
             P[j] += dP[j]
@@ -156,56 +164,63 @@ def integration(qp, M, W, E, K, n, es, Dp):
         pp = np.concatenate((pp, [p]), axis=0)
         qq = np.concatenate((qq, [qp]), axis=0)
         ff = np.concatenate((ff, [dp]), axis=0)
-        #if lamb[i] == 0:
-        #    print lamb.shape
-        #    t += (dP[i] ** (1./(1+n[i]))) / ((1 + n[i]) ** (n[i] / (n[i] + 1)) * K[i] ** (1 / (n[i] + 1)) * dp[i] ** (n[i] / (n[i] + 1)))
-        #else:
-        t += Dp/lamb[i]
-        tt.append(t)
         lambb = np.concatenate((lambb, [lamb]), axis=0)
         #Advance to next step
         k += 1
         #print qq.shape
         if k%1000 == 0:
             print k
-    return {'time':tt, 'force':lambb, 'relative':ff, 'impulse_space':pp, 'momentum':PP, 'Potential':EE, 'velocity':qq}
+    return {'force':lambb, 'relative':ff, 'impulse_space':pp, 'momentum':PP, 'Potential':EE, 'velocity':qq}
 
 
-# In[31]:
+# In[79]:
 
 #Book example
-qp = np.array([-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
-M = 2.094e-6*7780.*np.eye(10)
-W = np.array([[-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.,0.,0.,0.,0.,0.], [0.,1.,-1.,0.,0.,0.,0.,0.,0.,0.], [0.,0.,1.,-1.,0.,0.,0.,0.,0.,0.], [0.,0.,0.,1.,-1.,0.,0.,0.,0.,0.], [0.,0.,0.,0.,1.,-1.,0.,0.,0.,0.], [0.,0.,0.,0.,0.,1.,-1.,0.,0.,0.], [0.,0.,0.,0.,0.,0.,1.,-1.,0.,0.], [0.,0.,0.,0.,0.,0.,0.,1.,-1.,0.], [0.,0.,0.,0.,0.,0.,0.,0.,1.,-1.]])
-K = np.array([21031894.0045,21031894.0045,21031894.0045,21031894.0045,21031894.0045,21031894.0045,21031894.0045,21031894.0045,21031894.0045])
-E = np.array([1e-10,1e-10,1e-10,1e-10,1e-10,1e-10,1e-10,1e-10,1e-10])
-n = np.array([1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5])
-es = np.array([1.,1.,1.,1.,1.,1.,1.,1.,1.])
-Dp = 1.
-g = integration(qp, M, W, K, E, n, es, Dp)
+qp1 = np.array([10.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+M1 = np.multiply(0.0183311931337,np.eye(10))
+W1 = np.array([[-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.,0.,0.,0.,0.,0.], [0.,1.,-1.,0.,0.,0.,0.,0.,0.,0.], [0.,0.,1.,-1.,0.,0.,0.,0.,0.,0.], [0.,0.,0.,1.,-1.,0.,0.,0.,0.,0.], [0.,0.,0.,0.,1.,-1.,0.,0.,0.,0.], [0.,0.,0.,0.,0.,1.,-1.,0.,0.,0.], [0.,0.,0.,0.,0.,0.,1.,-1.,0.,0.], [0.,0.,0.,0.,0.,0.,0.,1.,-1.,0.], [0.,0.,0.,0.,0.,0.,0.,0.,1.,-1.]])
+K1 = np.multiply(10515947.0023, np.ones(9))
+E1 = np.multiply(1e-10, np.ones(9))
+n1 = np.multiply(1.5, np.ones(9))
+es1 = np.ones(9)
+Dp1 = 10.
+#g = integration(qp, M, W, K, E, n, es, Dp)
 #print g['velocity']
 
 
-# In[22]:
+# In[16]:
 
 #Generic example
-qp0 = np.array([1.,0.,0.,0.,0.])
-M0 = np.array([[1.,0.,0.,0.,0.], [0.,1.,0.,0.,0.], [0.,0.,1.,0.,0.], [0.,0.,0.,1.,0.], [0.,0.,0.,0.,1e20]])
-W0 = np.array([[-1.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.], [0.,1.,-1.,0.,0.], [0.,0.,1.,-1.,0.], [0.,0.,0.,1.,-1.]])
-K0 = np.array([1.,1.,1.,1.])
-E0 = np.array([1e-10,1e-10,1e-10,1e-10])
-n0 = np.array([1.5,1.5,1.5,1.5])
-es0 = np.array([1.,1.,1.,1.])
+qp0 = np.array([1.,0.,0.,0.,0.,0.,0.])
+M0 = np.array([[1.,0.,0.,0.,0.,0.,0.], [0.,1.,0.,0.,0.,0.,0.], [0.,0.,1.,0.,0.,0.,0.], [0.,0.,0.,1.,0.,0.,0.], [0.,0.,0.,0.,1.,0.,0.], [0.,0.,0.,0.,0.,1.,0.], [0.,0.,0.,0.,0.,0.,1e20]])
+W0 = np.array([[-1.,0.,0.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.,0.,0.], [0.,1.,-1.,0.,0.,0.,0.], [0.,0.,1.,-1.,0.,0.,0.], [0.,0.,0.,1.,-1.,0.,0.], [0.,0.,0.,0.,1.,-1.,0.], [0.,0.,0.,0.,0.,1.,-1.]])
+K0 = np.array([1.,1.,1.,1.,1.,1.])
+E0 = np.array([1e-10,1e-10,1e-10,1e-10,1e-10,1e-10])
+n0 = np.array([1.5,1.5,1.5,1.5,1.5,1.5])
+es0 = np.array([1.,1.,1.,1.,1.,1.])
 Dp0 = 1e-3
 g0 = integration(qp0, M0, W0, K0, E0, n0, es0, Dp0)
 #print g['velocity']
 
 
-# In[ ]:
+# In[80]:
 
+g = integration(qp1, M1, W1, K1, E1, n1, es1, Dp1)
 plt.plot(g['impulse_space'], g['velocity'])
 plt.show()
-print g0['velocity'].shape
+print g['velocity'].shape
+
+
+# In[68]:
+
+c = 203e6 / (0.91 * 2.)
+v = (0.01 ** 3.) * (math.pi * 3. * 7780.) / 4.
+o = ((0.005 ** 0.5) * c * 4.) / (3. * 0.91)
+print v
+print o
+#print K
+#print 11555985.7168 * np.ones(9)
+print K1
 
 
 # In[ ]:
