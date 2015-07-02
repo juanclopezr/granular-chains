@@ -1,14 +1,14 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[3]:
 
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-# In[2]:
+# In[4]:
 
 def step_size(M, qp, n):
     """
@@ -26,7 +26,7 @@ def step_size(M, qp, n):
     return DP
 
 
-# In[78]:
+# In[25]:
 
 #LZB Multiple impact models
 def integration(qp, M, W, E, K, n, es, Dp):
@@ -53,14 +53,14 @@ def integration(qp, M, W, E, K, n, es, Dp):
     #normal impulse matrix
     PP = [P]
     #contact force
-    lamb = np.zeros(qp.shape[0]-1)
+    #lamb = np.zeros(qp.shape[0]-1)
     #contact force matrix
-    lambb = [lamb]
+    #lambb = [lamb]
     
     #initial values
-    for j in xrange(qp.shape[0]-1):
-        dp[j] = qp[j] - qp[j+1]
-        lamb[j] = (1 + n[j]) ** (n[j]/(n[j] + 1)) * K[j] ** (1/(n[j] + 1)) * E[j] ** (n[j]/(n[j] + 1))
+    #for j in xrange(qp.shape[0]-1):
+    #    dp[j] = qp[j] - qp[j+1]
+    #    lamb[j] = (1 + n[j]) ** (n[j]/(n[j] + 1)) * K[j] ** (1/(n[j] + 1)) * E[j] ** (n[j]/(n[j] + 1))
         
     #Integration
     
@@ -69,9 +69,9 @@ def integration(qp, M, W, E, K, n, es, Dp):
     #vector that stores the impulse space
     pp = [p]
     #time
-    t = 0
+    #t = 0
     #vector that stores the time space
-    tt = [t]
+    #tt = [t]
     Termination = False
     #termination = true: impact is over
     #termination = false: otherwise
@@ -99,7 +99,7 @@ def integration(qp, M, W, E, K, n, es, Dp):
         
         Termination = True
         for j in rang:
-            if E[j] <= 1e-36:
+            if E[j] == 0:
                 if dp[j] <= 0:
                     flag[j] = 0
                 else:
@@ -155,7 +155,7 @@ def integration(qp, M, W, E, K, n, es, Dp):
                 E[j] += ((tmp + dp[j]) / 2) * dP[j]
             else:
                 E[j] += (1 / (es[j] ** 2)) *  ((tmp + dp[j]) / 2) * dP[j]
-            lamb[j] += ((1 + n[j]) ** (n[j] / (n[j] + 1))) * (K[j] ** (1 / (n[j] + 1))) * (E[j] ** (n[j] / (n[j] + 1)))
+            #lamb[j] += ((1 + n[j]) ** (n[j] / (n[j] + 1))) * (K[j] ** (1 / (n[j] + 1))) * (E[j] ** (n[j] / (n[j] + 1)))
         
         #Appends variables in memory
         EE = np.concatenate((EE, [E]), axis=0)
@@ -164,16 +164,19 @@ def integration(qp, M, W, E, K, n, es, Dp):
         pp = np.concatenate((pp, [p]), axis=0)
         qq = np.concatenate((qq, [qp]), axis=0)
         ff = np.concatenate((ff, [dp]), axis=0)
-        lambb = np.concatenate((lambb, [lamb]), axis=0)
+        #lambb = np.concatenate((lambb, [lamb]), axis=0)
         #Advance to next step
         k += 1
         #print qq.shape
         if k%1000 == 0:
-            print k
-    return {'force':lambb, 'relative':ff, 'impulse_space':pp, 'momentum':PP, 'Potential':EE, 'velocity':qq}
+            print k / 1000
+        for j in rang:
+            if E[j] < 0:
+                print E
+    return {'relative':ff, 'impulse_space':pp, 'momentum':PP, 'Potential':EE, 'velocity':qq}
 
 
-# In[79]:
+# In[26]:
 
 #Book example
 qp1 = np.array([10.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
@@ -203,10 +206,10 @@ g0 = integration(qp0, M0, W0, K0, E0, n0, es0, Dp0)
 #print g['velocity']
 
 
-# In[80]:
+# In[27]:
 
 g = integration(qp1, M1, W1, K1, E1, n1, es1, Dp1)
-plt.plot(g['impulse_space'], g['velocity'])
+plt.plot(g['impulse_space'], g['Potential'])
 plt.show()
 print g['velocity'].shape
 
