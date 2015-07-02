@@ -26,7 +26,7 @@ def step_size(M, qp, n):
     return DP
 
 
-# In[25]:
+# In[79]:
 
 #LZB Multiple impact models
 def integration(qp, M, W, E, K, n, es, Dp):
@@ -95,7 +95,7 @@ def integration(qp, M, W, E, K, n, es, Dp):
     #for speed purposes
     
     rang = range(qp.shape[0] - 1)
-    while (not Termination) | k < 40000:
+    while (not Termination) | k < 100000:
         
         Termination = True
         for j in rang:
@@ -132,7 +132,7 @@ def integration(qp, M, W, E, K, n, es, Dp):
             Ki[j] = (K[j] ** (1 / (1 + n[j]))) / (K[i] ** (1 / (1 + n[i])))
             
             if PrimaryContactInVel:
-                dpi[j] = (d[j] ** (n[j] / (1 + n[j]))) / (d[i] ** (n[i] / (1 + n[i])))
+                dpi[j] = (dp[j] ** (n[j] / (1 + n[j]))) / (dp[i] ** (n[i] / (1 + n[i])))
                 Ta[j] = ((ni[j] * Ki[j] * dpi[j]) ** (n[j] + 1)) * (Dp ** ((n[j] - n[i]) / n[i] + 1))
             else:
                 if flag[j] == 0:
@@ -176,28 +176,28 @@ def integration(qp, M, W, E, K, n, es, Dp):
     return {'relative':ff, 'impulse_space':pp, 'momentum':PP, 'Potential':EE, 'velocity':qq}
 
 
-# In[26]:
+# In[82]:
 
 #Book example
-qp1 = np.array([10.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
+qp1 = np.array([1.,0.,0.,0.,0.,0.,0.,0.,0.,0.])
 M1 = np.multiply(0.0183311931337,np.eye(10))
 W1 = np.array([[-1.,0.,0.,0.,0.,0.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.,0.,0.,0.,0.,0.], [0.,1.,-1.,0.,0.,0.,0.,0.,0.,0.], [0.,0.,1.,-1.,0.,0.,0.,0.,0.,0.], [0.,0.,0.,1.,-1.,0.,0.,0.,0.,0.], [0.,0.,0.,0.,1.,-1.,0.,0.,0.,0.], [0.,0.,0.,0.,0.,1.,-1.,0.,0.,0.], [0.,0.,0.,0.,0.,0.,1.,-1.,0.,0.], [0.,0.,0.,0.,0.,0.,0.,1.,-1.,0.], [0.,0.,0.,0.,0.,0.,0.,0.,1.,-1.]])
 K1 = np.multiply(10515947.0023, np.ones(9))
 E1 = np.multiply(1e-10, np.ones(9))
 n1 = np.multiply(1.5, np.ones(9))
 es1 = np.ones(9)
-Dp1 = 10.
+Dp1 = 1e-3
 #g = integration(qp, M, W, K, E, n, es, Dp)
 #print g['velocity']
 
 
-# In[16]:
+# In[ ]:
 
 #Generic example
 qp0 = np.array([1.,0.,0.,0.,0.,0.,0.])
-M0 = np.array([[1.,0.,0.,0.,0.,0.,0.], [0.,1.,0.,0.,0.,0.,0.], [0.,0.,1.,0.,0.,0.,0.], [0.,0.,0.,1.,0.,0.,0.], [0.,0.,0.,0.,1.,0.,0.], [0.,0.,0.,0.,0.,1.,0.], [0.,0.,0.,0.,0.,0.,1e20]])
+M0 = np.eye(7)
 W0 = np.array([[-1.,0.,0.,0.,0.,0.,0.], [1.,-1.,0.,0.,0.,0.,0.], [0.,1.,-1.,0.,0.,0.,0.], [0.,0.,1.,-1.,0.,0.,0.], [0.,0.,0.,1.,-1.,0.,0.], [0.,0.,0.,0.,1.,-1.,0.], [0.,0.,0.,0.,0.,1.,-1.]])
-K0 = np.array([1.,1.,1.,1.,1.,1.])
+K0 = np.ones(7)
 E0 = np.array([1e-10,1e-10,1e-10,1e-10,1e-10,1e-10])
 n0 = np.array([1.5,1.5,1.5,1.5,1.5,1.5])
 es0 = np.array([1.,1.,1.,1.,1.,1.])
@@ -206,12 +206,12 @@ g0 = integration(qp0, M0, W0, K0, E0, n0, es0, Dp0)
 #print g['velocity']
 
 
-# In[27]:
+# In[ ]:
 
-g = integration(qp1, M1, W1, K1, E1, n1, es1, Dp1)
-plt.plot(g['impulse_space'], g['Potential'])
+#g = integration(qp1, M1, W1, K1, E1, n1, es1, Dp1)
+plt.plot(g0['impulse_space'], g0['velocity'])
 plt.show()
-print g['velocity'].shape
+print g0['velocity'].shape
 
 
 # In[68]:
